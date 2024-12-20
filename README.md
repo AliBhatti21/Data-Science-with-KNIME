@@ -51,10 +51,10 @@ Once you have completed the installation, you can begin developing and using cus
 3. Execute the workflow, and the image processing will be handled by Python scripts through KNIME's interface.
 
 ## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+For any request about this software, please refer to the authors.
 
 ## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+This is a preliminary version. Further improvements and nodes will come soon. Stay tuned.
 
 ## Contributing
 We welcome contributions to this project! To contribute:
@@ -67,10 +67,10 @@ We welcome contributions to this project! To contribute:
 Please make sure your code follows the existing style and includes appropriate tests.
 
 ## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+Thanks to the collaboration with KNIME.
 
 ## License
-For open source projects, say how it is licensed.
+The nodes are released under GPLv3.
 
 ## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+We are currently developing new nodes and improving the existing ones. Please feel free to contribute.
