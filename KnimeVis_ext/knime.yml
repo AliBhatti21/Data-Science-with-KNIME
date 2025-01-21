@@ -7,7 +7,7 @@ group_id: it.unibz.ml
 version: 0.1.0 # Version of this Python node extension
 vendor: Machine Learning Research Group, Free University of Bozen-Bolzano, Italy
 license_file: LICENSE.TXT # Best practice: put your LICENSE.TXT next to the knime.yml; otherwise you would need to change to path/to/LICENSE.txt
-bundled_env_name: org_knime_pythonscripting # we re-use the bundled Python environment
+#bundled_env_name: org_knime_pythonscripting # we re-use the bundled Python environment
 #env_yml_path: bundling_ymls/environment_main.yml # this file is needed to create the dedicated conda environment upon installation in KNIME
 #the packages sometimes have different versions for each OS, following keys, point to the respective environment.yml files containing specific version of packages, this may not be applicable for all extensions but not necessary!
 env_yml_path: env.yml
