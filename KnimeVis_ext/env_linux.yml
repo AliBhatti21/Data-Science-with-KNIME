@@ -1,0 +1,13 @@
+name: KnimeVizEnv
+channels:
+  - conda-forge
+  - Knime
+dependencies:
+  - python=3.11 
+  - knime-python-base
+  - knime-extension
+  - pip:
+    - opencv-python==4.10.0.84
+    - ultralytics==8.3.91
+    - torch==2.6.0
+    - torchvision==0.21.0

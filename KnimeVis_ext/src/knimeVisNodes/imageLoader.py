@@ -5,6 +5,8 @@ import cv2 as cv
 from utils import knutills as kutil
 from PIL import Image 
 import os
+import io
+import base64
 
 # Logger setup
 LOGGER = logging.getLogger(__name__)
@@ -101,6 +103,8 @@ class ImageReader:
             if image is None:
                 LOGGER.error(f"Failed to read image at path: {normalized_path}")
                 return None
+
+               
             return image
         
         df["Image"] = [read_image(i) for i in images_path]

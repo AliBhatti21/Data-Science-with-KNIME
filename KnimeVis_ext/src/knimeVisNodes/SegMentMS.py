@@ -26,7 +26,7 @@ knimeVis_category = knext.category(
 @knext.node(
     name="Segmentation",
     node_type=knext.NodeType.MANIPULATOR,
-    icon_path="icons/denoise.png",
+    icon_path="icons/objdet.png",
     category=knimeVis_category,
     id="segment-image",
 )
@@ -58,6 +58,7 @@ class Segment:
 
     Attributes:
         model: The segmentation model used to process the image.
+        (model can be found here: https://docs.ultralytics.com/tasks/segment/)
 
     Methods:
         load_image(image_path): Loads an image from the specified path.
@@ -71,6 +72,12 @@ class Segment:
         description="Select the column to apply Segmentation.",
         port_index=0,
         column_filter=kutil.is_png
+    )
+
+    image_id = knext.ColumnParameter(
+        label="Image ID",
+        description="Select the column to use as ID.",
+        port_index=0
     )
 
     
@@ -97,6 +104,9 @@ class Segment:
         # Set default column if not already set
         if self.image_column is None:
             self.image_column = image_columns[-1][0]
+
+        if self.image_id is None:
+            self.image_id = input_schema_1[0]
        
         # Log selected column
         LOGGER.info(f"Selected image column: {self.image_column}")
@@ -109,11 +119,14 @@ class Segment:
         
         # Return the updated schema
         output_schema_boxes = knext.Schema.from_columns([
-            knext.Column(knext.double(), "img_id"),          # Image ID
-            knext.Column(knext.list_(knext.double()), "boxs")  # List of box coordinates
+            knext.Column(knext.string(), "img_id"),          # Image ID
+            knext.Column(knext.double(), "x_center"),  
+            knext.Column(knext.double(), "y_center"),  
+            knext.Column(knext.double(), "width"),  
+            knext.Column(knext.double(), "height"),  
         ])
         output_schema_masks = knext.Schema.from_columns([
-            knext.Column(knext.double(), "img_id"),          # Image ID
+            knext.Column(knext.string(), "img_id"),          # Image ID
             knext.Column(knext.list_(knext.double()), "masks") # List of mask values
         ])  
 
@@ -132,12 +145,12 @@ class Segment:
         df = input_table.to_pandas()
         
         # Initialize lists to collect results
-        boxes_data = {"img_id": [], "boxs": []}
+        boxes_data = {"img_id": [], "x_center": [], "y_center": [], "width": [], "height": []}
         masks_data = {"img_id": [], "masks": []}
 
         # for idx, row in df.iterrows():
         img = df[self.image_column].item()  # Get image path or data
-        img_id = 0  # Use index as img_id (or replace with a column like row["id"])
+        img_id = df[self.image_id].item()  # Use index as img_id (or replace with a column like row["id"])
 
         # Process image with YOLO model
         box, mask, img_res = self.process_image(model, img)
@@ -145,9 +158,11 @@ class Segment:
         if box is not None and len(box) > 0:
             # Convert tensor to numpy if needed
             for single_box in box:  # Iterate over each box (e.g., [x_min, y_min, x_max, y_max])
-                print(single_box)
                 boxes_data["img_id"].append(img_id)
-                boxes_data["boxs"].append(single_box)  # Convert to list for schema
+                boxes_data["x_center"].append(single_box[0])  # Convert to list for schema
+                boxes_data["y_center"].append(single_box[1])
+                boxes_data["width"].append(single_box[2])
+                boxes_data["height"].append(single_box[3])
         
         if mask is not None and len(mask) > 0:
             # Convert tensor to numpy if needed
@@ -173,10 +188,20 @@ class Segment:
     
     def process_image(self, model, img):
         result = model.predict(img)  # Example: result could be a list or dict
-       
-        boxes = result[0].boxes.xywhn #Contains normalized [x_center, y_center, width, height] coordinates relative to the original image dimensions (values between 0-1)
-        boxes = boxes.numpy()
-        masks = result[0].masks.xyn #Contains normalized [x, y] coordinates relative to the original image dimensions (values between 0-1)
+        try:
+            boxes = result[0].boxes.xywhn #Contains normalized [x_center, y_center, width, height] coordinates relative to the original image dimensions (values between 0-1)
+            boxes = boxes.numpy()
+        except:
+            LOGGER.info(f"Bounding boxes not available")
+            boxes = np.zeros((1, 4))  
+
+        try:
+            masks = result[0].masks.xyn #Contains normalized [x, y] coordinates relative to the original image dimensions (values between 0-1)
+        except Exception as e:
+            LOGGER.info(f"Masks not available: {str(e)}")
+            masks = None  # Empty array for masks (no coordinates)
+
+        
         img_res = Image.fromarray(result[0].plot()[:, :, ::-1])
 
         return boxes, masks, img_res
