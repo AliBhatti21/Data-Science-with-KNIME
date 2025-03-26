@@ -26,7 +26,7 @@ knimeVis_category = knext.category(
 )
 
 @knext.node(
-    name="Segmentation With SAM",
+    name="SAM",
     node_type=knext.NodeType.MANIPULATOR,
     icon_path="icons/denoise.png",
     category=knimeVis_category,

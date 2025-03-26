@@ -24,7 +24,7 @@ knimeVis_category = knext.category(
 
 # Node definition
 @knext.node(
-    name="Segmentation",
+    name="YOLO",
     node_type=knext.NodeType.MANIPULATOR,
     icon_path="icons/objdet.png",
     category=knimeVis_category,
@@ -148,33 +148,35 @@ class Segment:
         boxes_data = {"img_id": [], "x_center": [], "y_center": [], "width": [], "height": []}
         masks_data = {"img_id": [], "masks": []}
 
-        # for idx, row in df.iterrows():
-        img = df[self.image_column].item()  # Get image path or data
-        img_id = df[self.image_id].item()  # Use index as img_id (or replace with a column like row["id"])
+        for idx, row in df.iterrows():
+            img = df[self.image_column].item()  # Get image path or data
+            img_id = df[self.image_id].item()  # Use index as img_id (or replace with a column like row["id"])
 
-        # Process image with YOLO model
-        box, mask, img_res = self.process_image(model, img)
+            # Process image with YOLO model
+            box, mask, img_res = self.process_image(model, img)
 
-        if box is not None and len(box) > 0:
-            # Convert tensor to numpy if needed
-            for single_box in box:  # Iterate over each box (e.g., [x_min, y_min, x_max, y_max])
-                boxes_data["img_id"].append(img_id)
-                boxes_data["x_center"].append(single_box[0])  # Convert to list for schema
-                boxes_data["y_center"].append(single_box[1])
-                boxes_data["width"].append(single_box[2])
-                boxes_data["height"].append(single_box[3])
-        
-        if mask is not None and len(mask) > 0:
-            # Convert tensor to numpy if needed
-            for single_mask in mask:  # Iterate over each mask
-                masks_data["img_id"].append(img_id)
-                masks_data["masks"].append(single_mask.flatten().tolist())  # Convert to list for schema
-        
+            if box is not None and len(box) > 0:
+                # Convert tensor to numpy if needed
+                for single_box in box:  # Iterate over each box (e.g., [x_min, y_min, x_max, y_max])
+                    boxes_data["img_id"].append(img_id)
+                    boxes_data["x_center"].append(single_box[0])  # Convert to list for schema
+                    boxes_data["y_center"].append(single_box[1])
+                    boxes_data["width"].append(single_box[2])
+                    boxes_data["height"].append(single_box[3])
+            
+            if mask is not None and len(mask) > 0:
+                # Convert tensor to numpy if needed
+                for single_mask in mask:  # Iterate over each mask
+                    masks_data["img_id"].append(img_id)
+                    masks_data["masks"].append(single_mask.flatten().tolist())  # Convert to list for schema
+            # Append the processed image with mask to the DataFrame
+            df.at[idx, "ImageMasked"] = img_res
+            
 
         # Create output DataFrames
         boxes_df = pd.DataFrame(boxes_data)
         masks_df = pd.DataFrame(masks_data)
-        df["ImageMasked"] = img_res
+        # df["ImageMasked"] = img_res
 
         output_schema_boxes = knext.Table.from_pandas(boxes_df)
         output_schema_masks = knext.Table.from_pandas(masks_df)
