@@ -152,9 +152,8 @@ class Segment:
         boxes_data = {"img_id": [],"class":[],"confidence":[], "x_center": [], "y_center": [], "width": [], "height": []}
         masks_data = {"img_id": [],"class":[],"confidence":[], "masks": []}
 
-        for idx, row in df.iterrows():
-            img = df[self.image_column] # Get image path or data
-            img_id = df[self.image_id]  # Use index as img_id (or replace with a column like row["id"])
+        for img_id, img in zip(df[self.image_id],df[self.image_column]):
+    
 
             # Process image with YOLO model
             box, mask, img_res, conf,classid = self.process_image(model, img)
@@ -177,10 +176,7 @@ class Segment:
                     masks_data["confidence"].append(conf[i])
                     masks_data["class"].append(classid[i])
                     masks_data["masks"].append(Image.fromarray((single_mask), mode="L"))  # Convert to list for schema
-            # Append the processed image with mask to the DataFrame
-            df.at[idx, "ImageMasked"] = img_res
-            
-
+           
         # Create output DataFrames
         boxes_df = pd.DataFrame(boxes_data)
         masks_df = pd.DataFrame(masks_data)
