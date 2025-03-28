@@ -119,15 +119,19 @@ class Segment:
         
         # Return the updated schema
         output_schema_boxes = knext.Schema.from_columns([
-            knext.Column(knext.string(), "img_id"),          # Image ID
+            knext.Column(knext.string(), "img_id"),  
+            knext.Column(knext.string(), "class"),  
+            knext.Column(knext.double(), "confidence"),        
             knext.Column(knext.double(), "x_center"),  
             knext.Column(knext.double(), "y_center"),  
             knext.Column(knext.double(), "width"),  
             knext.Column(knext.double(), "height"),  
         ])
         output_schema_masks = knext.Schema.from_columns([
-            knext.Column(knext.string(), "img_id"),          # Image ID
-            knext.Column(knext.list_(knext.double()), "masks") # List of mask values
+            knext.Column(knext.string(), "img_id"),
+            knext.Column(knext.string(), "class"),  
+            knext.Column(knext.double(), "confidence"), 
+            knext.Column(Image.Image, "masks") # List of mask values
         ])  
 
         output_schema = input_schema_1.append(
@@ -145,20 +149,22 @@ class Segment:
         df = input_table.to_pandas()
         
         # Initialize lists to collect results
-        boxes_data = {"img_id": [], "x_center": [], "y_center": [], "width": [], "height": []}
-        masks_data = {"img_id": [], "masks": []}
+        boxes_data = {"img_id": [],"class":[],"confidence":[], "x_center": [], "y_center": [], "width": [], "height": []}
+        masks_data = {"img_id": [],"class":[],"confidence":[], "masks": []}
 
         for idx, row in df.iterrows():
-            img = df[self.image_column].item()  # Get image path or data
-            img_id = df[self.image_id].item()  # Use index as img_id (or replace with a column like row["id"])
+            img = df[self.image_column] # Get image path or data
+            img_id = df[self.image_id]  # Use index as img_id (or replace with a column like row["id"])
 
             # Process image with YOLO model
-            box, mask, img_res = self.process_image(model, img)
+            box, mask, img_res, conf,classid = self.process_image(model, img)
 
             if box is not None and len(box) > 0:
                 # Convert tensor to numpy if needed
-                for single_box in box:  # Iterate over each box (e.g., [x_min, y_min, x_max, y_max])
+                for i,single_box in enumerate(box):  # Iterate over each box (e.g., [x_min, y_min, x_max, y_max])
                     boxes_data["img_id"].append(img_id)
+                    boxes_data["confidence"].append(conf[i])
+                    boxes_data["class"].append(classid[i])
                     boxes_data["x_center"].append(single_box[0])  # Convert to list for schema
                     boxes_data["y_center"].append(single_box[1])
                     boxes_data["width"].append(single_box[2])
@@ -166,9 +172,11 @@ class Segment:
             
             if mask is not None and len(mask) > 0:
                 # Convert tensor to numpy if needed
-                for single_mask in mask:  # Iterate over each mask
+                for i,single_mask in enumerate(mask):  # Iterate over each mask
                     masks_data["img_id"].append(img_id)
-                    masks_data["masks"].append(single_mask.flatten().tolist())  # Convert to list for schema
+                    masks_data["confidence"].append(conf[i])
+                    masks_data["class"].append(classid[i])
+                    masks_data["masks"].append(Image.fromarray((single_mask), mode="L"))  # Convert to list for schema
             # Append the processed image with mask to the DataFrame
             df.at[idx, "ImageMasked"] = img_res
             
@@ -198,12 +206,16 @@ class Segment:
             boxes = np.zeros((1, 4))  
 
         try:
-            masks = result[0].masks.xyn #Contains normalized [x, y] coordinates relative to the original image dimensions (values between 0-1)
+            masks = result[0].masks.data 
+            masks = masks.cpu().numpy()
+            masks = (masks>0).astype(np.uinit8)*255
         except Exception as e:
             LOGGER.info(f"Masks not available: {str(e)}")
-            masks = None  # Empty array for masks (no coordinates)
+            masks = None  # Empty array for masks (no coordinates)  
 
-        
+        class_name = [result[0].names[int(cls)] for cls in result[0].boxes.cls]
+        confidence = result.boxes.conf.cpu().numpy()
+      
         img_res = Image.fromarray(result[0].plot()[:, :, ::-1])
 
-        return boxes, masks, img_res
+        return boxes, masks, img_res,confidence,class_name
