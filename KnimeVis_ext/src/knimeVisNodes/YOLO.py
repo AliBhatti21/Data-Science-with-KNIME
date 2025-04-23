@@ -48,9 +48,9 @@ knimeVis_category = knext.category(
     description="Table containing image",
 )
 
-class Segment:
+class YOLO:
     """
-    Segment
+    YOLO
 
     This class provides functionality to segment any image using a given model.
     It includes methods to load an image, apply a segmentation model, and return
