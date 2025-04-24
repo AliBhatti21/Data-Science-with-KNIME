@@ -1,4 +1,3 @@
-from KnimeVis_ext.src.knimeVisNodes import YOLO
 import knime.extension as knext
 
 
@@ -12,4 +11,4 @@ main_category = knext.category(
 
 
 #from knimeVisNodes import imageProcessing, imageProcessing2
-from knimeVisNodes import imageLoader,Denoising,EdgeDetection,Equalization,IoU,YOLO,SAM
+from knimeVisNodes import imageLoader,Denoising,EdgeDetection,Equalization,IoU,KnimeYOLO,SAM
