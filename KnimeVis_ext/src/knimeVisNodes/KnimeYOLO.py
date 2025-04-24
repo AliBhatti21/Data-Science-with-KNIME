@@ -115,23 +115,27 @@ class KnimeYOLO:
         if not os.path.isfile(self.model_path):
             LOGGER.error(f"Model file not found at: {self.model_path}")
             raise ValueError("Model file not found at the specified path.")
-
+        
         
         # Return the updated schema
         output_schema_boxes = knext.Schema.from_columns([
-            knext.Column(knext.string(), "img_id"),          # Image ID
+            knext.Column(knext.string(), "img_id"),         
             knext.Column(knext.double(), "x_center"),  
             knext.Column(knext.double(), "y_center"),  
             knext.Column(knext.double(), "width"),  
-            knext.Column(knext.double(), "height"),  
+            knext.Column(knext.double(), "height"),
+            knext.Column(knext.string(), "class"),  
+            knext.Column(knext.double(), "confidences")  
         ])
         output_schema_masks = knext.Schema.from_columns([
-            knext.Column(knext.string(), "img_id"),          # Image ID
-            knext.Column(knext.list_(knext.double()), "masks") # List of mask values
+            knext.Column(knext.string(), "img_id"),          
+            knext.Column(knext.logical(Image.Image), "masks"),
+            knext.Column(knext.string(), "class"),  
+            knext.Column(knext.double(), "confidences") 
         ])  
 
         output_schema = input_schema_1.append(
-            [knext.Column(knext.logical(Image.Image), "ImageMasked")])
+            [ knext.Column(knext.logical(Image.Image), "ImageMasked")])
 
         # Return the output schemas
         return output_schema_boxes, output_schema_masks, output_schema
@@ -145,30 +149,36 @@ class KnimeYOLO:
         df = input_table.to_pandas()
         
         # Initialize lists to collect results
-        boxes_data = {"img_id": [], "x_center": [], "y_center": [], "width": [], "height": []}
-        masks_data = {"img_id": [], "masks": []}
+        boxes_data = {"img_id": [], "x_center": [], "y_center": [], "width": [], "height": [], "class": [], "confidence": []}
+        masks_data = {"img_id": [], "masks": [], "class": [], "confidence": []}
 
         for idx, row in df.iterrows():
             img = row[self.image_column]  # Get image path or data
             img_id = row[self.image_id] # Use index as img_id (or replace with a column like row["id"])
 
             # Process image with YOLO model
-            box, mask, img_res = self.process_image(model, img)
+            boxes, mask_images, img_res, confidences, class_names = self.process_image(model, img)
 
-            if box is not None and len(box) > 0:
+            if boxes is not None and len(boxes) > 0:
                 # Convert tensor to numpy if needed
-                for single_box in box:  # Iterate over each box (e.g., [x_min, y_min, x_max, y_max])
+                 for i, single_box in enumerate(boxes):  # Iterate over each box (e.g., [x_min, y_min, x_max, y_max])
                     boxes_data["img_id"].append(img_id)
                     boxes_data["x_center"].append(single_box[0])  # Convert to list for schema
                     boxes_data["y_center"].append(single_box[1])
                     boxes_data["width"].append(single_box[2])
                     boxes_data["height"].append(single_box[3])
+                    boxes_data["class"].append(class_names[i] if i < len(class_names) else "unknown")
+                    boxes_data["confidence"].append(confidences[i] if i < len(confidences) else -1)
+
             
-            if mask is not None and len(mask) > 0:
+            if mask_images is not None and len(mask_images) > 0:
                 # Convert tensor to numpy if needed
-                for single_mask in mask:  # Iterate over each mask
+                for i, single_mask in enumerate(mask_images):  # Iterate over each mask
                     masks_data["img_id"].append(img_id)
-                    masks_data["masks"].append(single_mask.flatten().tolist())  # Convert to list for schema
+                    masks_data["masks"].append(single_mask)  # Convert to list for schema
+                    masks_data["class"].append(class_names[i] if i < len(class_names) else "unknown")
+                    masks_data["confidence"].append(confidences[i] if i < len(confidences) else -1)
+
             # Append the processed image with mask to the DataFrame
             df.at[idx, "ImageMasked"] = img_res
             
@@ -190,6 +200,8 @@ class KnimeYOLO:
     
     def process_image(self, model, img):
         result = model.predict(img)  # Example: result could be a list or dict
+
+        # Get bounding boxes coordinates
         try:
             boxes = result[0].boxes.xywhn #Contains normalized [x_center, y_center, width, height] coordinates relative to the original image dimensions (values between 0-1)
             boxes = boxes.numpy()
@@ -197,13 +209,27 @@ class KnimeYOLO:
             LOGGER.info(f"Bounding boxes not available")
             boxes = np.zeros((1, 4))  
 
+        # Get segmentation mask 
         try:
-            masks = result[0].masks.xyn #Contains normalized [x, y] coordinates relative to the original image dimensions (values between 0-1)
+            mask_images = []
+            for i, mask_tensor in enumerate(result[0].masks.data):
+                mask_np = (mask_tensor.cpu().numpy() * 255).astype(np.uint8)  # Convert to uint8
+                mask_img = Image.fromarray(mask_np, mode='L')  # B/W mask image
+                mask_images.append(mask_img)
+
         except Exception as e:
             LOGGER.info(f"Masks not available: {str(e)}")
-            masks = None  # Empty array for masks (no coordinates)
+            mask_images = None  # Empty array for masks (no coordinates)
 
+        # Get class IDs and confidences
+        try:
+            class_ids = result[0].boxes.cls.cpu().numpy().astype(int)  # Integer class indices
+            confidences = result[0].boxes.conf.cpu().numpy()  # Confidence scores
+            class_names = [model.names[c] for c in class_ids]  # Class names from model
+        except Exception as e:
+            LOGGER.info(f"Classes/confidences not available: {str(e)}")
+            class_ids, confidences, class_names = [], [], []
         
         img_res = Image.fromarray(result[0].plot()[:, :, ::-1])
 
-        return boxes, masks, img_res
+        return boxes, mask_images, img_res, confidences, class_names
