@@ -7,6 +7,8 @@ from ultralytics import YOLO
 from concurrent.futures import ThreadPoolExecutor
 from PIL import Image 
 import pandas as pd
+import torch
+from torchvision import transforms
 import time
 import os
 
@@ -82,9 +84,16 @@ class KnimeYOLO:
 
     
     # Define the file path parameter
-    model_path = knext.StringParameter(
+    model_path = knext.LocalPathParameter(
         label="Model file path",
-        description="Specify the path to the model file to be deplyed.",
+        description="Specify the path to the YOLO model file.",
+    )
+
+    device: str = knext.EnumParameter(
+        "Computation Device",
+        "Choose between CPU or GPU (CUDA) for model inference.",
+        ["CPU", "CUDA"],
+        "CPU"
     )
 
     
@@ -100,6 +109,7 @@ class KnimeYOLO:
         if not image_columns:
             # If no string columns are found, raise an exception or return None
             raise ValueError("No string columns available for image paths.")
+        
         
         # Set default column if not already set
         if self.image_column is None:
@@ -144,8 +154,18 @@ class KnimeYOLO:
    
     def execute(self, execute_context: knext.ExecutionContext, input_table: knext.Table) -> knext.Table:
 
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+        ])
+
+        # Determine and log device
+        device = "cuda" if self.device == "CUDA" and torch.cuda.is_available() else "cpu"
+        LOGGER.info(f"Using device: {device}")
+
         # Load a pretrained YOLO model
         model = YOLO(self.model_path)
+        model.to(device)
+
         df = input_table.to_pandas()
         
         # Initialize lists to collect results
@@ -154,10 +174,11 @@ class KnimeYOLO:
 
         for idx, row in df.iterrows():
             img = row[self.image_column]  # Get image path or data
+            img_tensor = transform(img).unsqueeze(0).to(device)
             img_id = row[self.image_id] # Use index as img_id (or replace with a column like row["id"])
 
             # Process image with YOLO model
-            boxes, mask_images, img_res, confidences, class_names = self.process_image(model, img)
+            boxes, mask_images, img_res, confidences, class_names = self.process_image(model, img, device=device)
 
             if boxes is not None and len(boxes) > 0:
                 # Convert tensor to numpy if needed
@@ -198,12 +219,12 @@ class KnimeYOLO:
 
     
     
-    def process_image(self, model, img):
-        result = model.predict(img)  # Example: result could be a list or dict
+    def process_image(self, model, img, device="cpu"):
+        result = model.predict(img, device=0 if device == "cuda" else "cpu")  # Example: result could be a list or dict
 
         # Get bounding boxes coordinates
         try:
-            boxes = result[0].boxes.xywhn #Contains normalized [x_center, y_center, width, height] coordinates relative to the original image dimensions (values between 0-1)
+            boxes = result[0].boxes.xywh #Contains normalized [x_center, y_center, width, height] coordinates relative to the original image dimensions (values between 0-1)
             boxes = boxes.numpy()
         except:
             LOGGER.info(f"Bounding boxes not available")
