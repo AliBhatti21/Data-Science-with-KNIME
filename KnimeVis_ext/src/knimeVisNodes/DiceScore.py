@@ -60,6 +60,24 @@ class DiceScore:
         port_index=0
     )
 
+    # Define your parameter
+    mask_column = knext.ColumnParameter(
+        label="Mask colum",
+        description="Select the column to use as Mask.",
+        port_index=0
+    )
+
+    class DeviceOptions(knext.EnumParameterOptions):
+        CPU = ("cpu", "Use CPU for inference")
+        GPU = ("gpu", "Use GPU for inference if CUDA available.")
+
+    device: str = knext.EnumParameter(
+        label="Computation Device",
+        description="Choose between CPU or GPU (CUDA) for model inference.",
+        default_value=DeviceOptions.CPU.name,
+        enum=DeviceOptions
+    )
+
     def configure(
         self,
         configure_context: knext.ConfigurationContext,
@@ -76,7 +94,7 @@ class DiceScore:
         # Define output schema
         output_schema_boxes = knext.Schema.from_columns([
             knext.Column(knext.string(), "img_id"),  # Image ID
-            knext.Column(knext.double(), "IoU"),     # IoU score
+            knext.Column(knext.double(), "DiceScore"),     # DiceScore
         ])
        
         # Return the output schemas
@@ -91,7 +109,7 @@ class DiceScore:
         ])
 
         # Determine and log device
-        device = "cuda" if self.device == "CUDA" and torch.cuda.is_available() else "cpu"
+        device = "cuda" if self.device == "gpu" and torch.cuda.is_available() else "cpu"
         LOGGER.info(f"Using device: {device}")
 
         # Convert KNIME tables to pandas DataFrames

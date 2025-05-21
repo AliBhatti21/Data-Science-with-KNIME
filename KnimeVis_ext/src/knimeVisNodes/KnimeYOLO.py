@@ -89,11 +89,15 @@ class KnimeYOLO:
         description="Specify the path to the YOLO model file.",
     )
 
+    class DeviceOptions(knext.EnumParameterOptions):
+        CPU = ("cpu", "Use CPU for inference")
+        GPU = ("gpu", "Use GPU for inference if CUDA available.")
+
     device: str = knext.EnumParameter(
-        "Computation Device",
-        "Choose between CPU or GPU (CUDA) for model inference.",
-        ["CPU", "CUDA"],
-        "CPU"
+        label="Computation Device",
+        description="Choose between CPU or GPU (CUDA) for model inference.",
+        default_value=DeviceOptions.CPU.name,
+        enum=DeviceOptions
     )
 
     
