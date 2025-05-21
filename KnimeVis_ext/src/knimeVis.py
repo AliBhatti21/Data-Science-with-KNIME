@@ -11,4 +11,4 @@ main_category = knext.category(
 
 
 #from knimeVisNodes import imageProcessing, imageProcessing2
-from knimeVisNodes import imageLoader,Denoising,EdgeDetection,Equalization,IoU,KnimeYOLO,SAM
+from knimeVisNodes import imageLoader,Denoising,EdgeDetection,Equalization,IoU,KnimeYOLO,SAM,DiceScore 
