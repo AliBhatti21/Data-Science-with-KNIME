@@ -151,3 +151,5 @@ def is_png(column: knext.Column) -> bool:
     @return: True if Column is image
     """
     return __is_type_x(column, PNG_IMAGE_VALUE)
+
+

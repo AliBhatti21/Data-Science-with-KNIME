@@ -169,10 +169,10 @@ class KnimeYOLO:
         boxes_data = {"img_id": [], "x_center": [], "y_center": [], "width": [], "height": [], "class": [], "confidence": []}
         masks_data = {"img_id": [], "masks": [], "class": [], "confidence": []}
 
-        for idx, row in df.iterrows():
-            img = row[self.image_column]  # Get image path or data
+        for idx in df.index:
+            img = df.at[idx,self.image_column]  # Get image path or data
             img_tensor = transform(img).unsqueeze(0).to(device)
-            img_id = row[self.image_id] # Use index as img_id (or replace with a column like row["id"])
+            img_id = df.at[idx,self.image_id] # Use index as img_id (or replace with a column like row["id"])
 
             # Process image with YOLO model
             boxes, mask_images, img_res, confidences, class_names = self.process_image(model, img, device=device)
