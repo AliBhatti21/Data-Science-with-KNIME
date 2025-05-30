@@ -34,51 +34,44 @@ knimeVis_category = knext.category(
 )
 @knext.output_table(
     name="Bounding Boxes",
-    description="Table containing bounding box coordinates",
+    description="Contains bounding box coordinates for each detected object.",
 )
 @knext.output_table(
     name="Segmentation Masks",
-    description="Table containing segmentation masks",
+    description="Contains the segmentation masks for each detected object.",
 )
 @knext.output_table(
-    name="image Masks",
-    description="Table containing segmentation masks",
+    name="Image Masks",
+    description="Contains the input image overlaid with segmentation masks for visualization.",
 )
 
 @knext.input_table(
     name="Image Data",
-    description="Table containing image",
+    description="Table containing the image(s) to be segmented.",
 )
 
 class KnimeYOLO:
     """
     KnimeYOLO
 
-    This class provides functionality to segment any image using a given model.
-    It includes methods to load an image, apply a segmentation model, and return
-    the segmented result.
+    Perform segmentation, object detection, and classification using a YOLO model.
 
-    Attributes:
-        model: The segmentation model used to process the image.
-        (model can be found here: https://docs.ultralytics.com/tasks/segment/)
-
-    Methods:
-        load_image(image_path): Loads an image from the specified path.
-        segment_image(): Applies the segmentation model to the loaded image.
-        get_result(): Returns the segmented image.
+    This KnimeNode applies a pretrained YOLO model on input images based on the provided model weights.
+    It supports both official pretrained models available from Ultralytics
+    (https://docs.ultralytics.com/tasks/segment/) and custom fine-tuned models.
     """
 
     # Define your parameter
     image_column = knext.ColumnParameter(
         label="Image Column",
-        description="Select the column to apply Segmentation.",
+        description="Select the column containing PNG images on which YOLO segmentation and detection will be applied.",
         port_index=0,
         column_filter=kutil.is_png
     )
 
     image_id = knext.ColumnParameter(
         label="Image ID",
-        description="Select the column to use as ID.",
+        description="Select the column to use as a unique identifier for each image.",
         port_index=0
     )
 
@@ -86,16 +79,16 @@ class KnimeYOLO:
     # Define the file path parameter
     model_path = knext.LocalPathParameter(
         label="Model file path",
-        description="Specify the path to the YOLO model file.",
+        description="Specify the local file path to the YOLO model weights (.pt file).",
     )
 
     class DeviceOptions(knext.EnumParameterOptions):
         CPU = ("cpu", "Use CPU for inference")
-        GPU = ("gpu", "Use GPU for inference if CUDA available.")
+        GPU = ("gpu", "Use GPU for inference if CUDA is available")
 
     device: str = knext.EnumParameter(
         label="Computation Device",
-        description="Choose between CPU or GPU (CUDA) for model inference.",
+        description="Select the device for running model inference: CPU or GPU (CUDA).",
         default_value=DeviceOptions.CPU.name,
         enum=DeviceOptions
     )
