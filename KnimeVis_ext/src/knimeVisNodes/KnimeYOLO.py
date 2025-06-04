@@ -221,7 +221,7 @@ class KnimeYOLO:
 
         # Get bounding boxes coordinates
         try:
-            boxes = result[0].boxes.xywh #Contains normalized [x_center, y_center, width, height] coordinates relative to the original image dimensions (values between 0-1)
+            boxes = result[0].boxes.xywhn #Contains normalized [x_center, y_center, width, height] coordinates relative to the original image dimensions (values between 0-1)
             boxes = boxes.numpy()
         except:
             LOGGER.info(f"Bounding boxes not available")
