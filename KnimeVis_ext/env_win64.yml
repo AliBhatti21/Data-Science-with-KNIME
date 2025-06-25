@@ -9,5 +9,6 @@ dependencies:
   - pip:
     - opencv-python==4.10.0.84
     - ultralytics==8.3.91
+    - segment_anything==1.0
     - torch==2.6.0
     - torchvision==0.21.0
