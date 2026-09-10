@@ -1,4 +1,4 @@
-# knimeVizLab
+git remote add origin https://github.com/<username>/<repo-name>.git# knimeVizLab
 
 ![alt text](LogoProject.png)
 
@@ -10,7 +10,8 @@ With this project, users can:
 - Develop custom KNIME nodes tailored to specific image processing requirements.
 - Leverage Python libraries and tools for advanced image manipulation and analysis.
 - Simplify workflows by combining KNIME's no-code/low-code environment with Python's scripting flexibility.
-
+ 
+ 
 
 ## Installation
 
