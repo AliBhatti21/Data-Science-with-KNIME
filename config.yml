@@ -1,0 +1,5 @@
+# Configurations in this file are only for development purposes. Would recommend to be added in .gitignore
+it.unibz.ml.knimeVis: # {group_id}.{name} from the knime.yml
+  src: /Applications/KNIME 5.3.3.app/Contents/knimevizlab/KnimeVis_ext/ # Local path to folder containing the extension files 
+  conda_env_path: /Applications/KNIME 5.3.3.app/Contents/knimevizlab/KnimeVis_ext/.pixi/envs/default
+  debug_mode: true # Optional line, if set to true, it will always use the latest changes of execute/configure, when that method is used within the KNIME Analytics Platform

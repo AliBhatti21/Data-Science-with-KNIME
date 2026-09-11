@@ -1,0 +1,11 @@
+name: knimeVis # Will be concatenated with the group_id to an ID
+author: Giuseppe Di Fatta, Andrea Rosani, Thomas Borsani, Raziyeh Tabatabaei, Muhammad Ali Bhatti Hafiz
+extension_module: src/knimeVis # The .py Python module containing the nodes of your extension
+description: KNIME Nodes for Image Processing # Human readable bundle name / description
+long_description: UniBZ Machine Learning Research Group - KNIME extension for image processing.
+group_id: it.unibz.ml
+version: 0.1.0 # Version of this Python node extension
+vendor: Machine Learning Research Group, Free University of Bozen-Bolzano, Italy
+license_file: LICENSE.TXT # Best practice: put your LICENSE.TXT next to the knime.yml; otherwise you would need to change to path/to/LICENSE.txt
+
+pixi_toml_path: pixi.toml # This is necessary for bundling, but not needed during development
