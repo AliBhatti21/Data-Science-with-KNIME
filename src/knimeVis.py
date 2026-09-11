@@ -9,4 +9,7 @@ main_category = knext.category(
 )
 
 
-from knimeVisNodes import imageLoader,Denoising,EdgeDetection,Equalization,KnimeYOLO,SAM
+from KnimeVis_ext.src.knimeVisNodes import Hippo_segmentation, Hippo_views, morphometric_measures, subcortical_measures
+from knimeVisNodes import imageLoader,Denoising,EdgeDetection,Equalization,KnimeYOLO,SAM,DiceScore,InteractiveView,promptSegSAM,KSurferSSHConnector, KSurferSubjectValidator, KSurferNode, MI_node, icv_normalization, lme_learner_node, lme_apply_node
+
+
